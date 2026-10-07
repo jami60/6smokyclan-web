@@ -4726,17 +4726,40 @@ Sound: Ethereal Ambient Trap, Cloud Rap, xaviersobased Type Beats
         this.canvas = document.getElementById('bubbleCanvas');
         this.ctx = this.canvas.getContext('2d');
         this.bubbles = [];
-        this.enabled = true;
+        const savedBubbles = localStorage.getItem('6sc_bubbles');
+        this.enabled = savedBubbles !== null ? (savedBubbles === '1') : true;
         this.resize();
         window.addEventListener('resize', () => this.resize());
-        for (let i = 0; i < 20; i++) this.bubbles.push(this.createBubble(Math.random() * this.canvas.width, Math.random() * this.canvas.height));
+        if (this.enabled) {
+          for (let i = 0; i < 20; i++) this.bubbles.push(this.createBubble(Math.random() * this.canvas.width, Math.random() * this.canvas.height));
+        }
         this.animate();
 
         document.getElementById('desktop').addEventListener('click', (e) => {
-          if (e.target.id === 'desktop' || e.target.id === 'bubbleCanvas') {
+          if ((e.target.id === 'desktop' || e.target.id === 'bubbleCanvas') && this.enabled) {
             this.spawnBatch(e.clientX, e.clientY, 4);
           }
         });
+      }
+      setEnabled(val, save = true) {
+        this.enabled = !!val;
+        if (save) {
+          localStorage.setItem('6sc_bubbles', this.enabled ? '1' : '0');
+        }
+        if (!this.enabled) {
+          this.bubbles = [];
+          if (this.ctx && this.canvas) {
+            this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+          }
+        } else if (this.bubbles.length === 0 && this.canvas) {
+          for (let i = 0; i < 20; i++) {
+            this.bubbles.push(this.createBubble(Math.random() * this.canvas.width, Math.random() * this.canvas.height));
+          }
+        }
+        const chkBubbles = document.getElementById('chkBubbles');
+        if (chkBubbles && chkBubbles.checked !== this.enabled) {
+          chkBubbles.checked = this.enabled;
+        }
       }
       resize() {
         this.canvas.width = window.innerWidth;
@@ -4763,8 +4786,14 @@ Sound: Ethereal Ambient Trap, Cloud Rap, xaviersobased Type Beats
       }
       animate() {
         requestAnimationFrame(() => this.animate());
+        if (!this.enabled) {
+          if (this.bubbles.length > 0) {
+            this.bubbles = [];
+            this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+          }
+          return;
+        }
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-        if (!this.enabled) return;
         for (let i = this.bubbles.length - 1; i >= 0; i--) {
           const b = this.bubbles[i];
           b.wobbleAngle += b.wobbleSpeed;
@@ -4803,6 +4832,7 @@ Sound: Ethereal Ambient Trap, Cloud Rap, xaviersobased Type Beats
       }
     }
     const bubbles = new BubbleSimulation();
+    window.bubbles = bubbles;
 
     /* WINDOW MANAGER (WITH DRAG SHIELD TO FIX IFRAME SWALLOWING EVENTS) */
     class WindowManager {
@@ -6179,11 +6209,44 @@ Volume Serial Number is 6SC0-2006<br><br>
 
 
     /* EFFECTS & NOSTALGIA */
-    document.getElementById('chkBubbles').addEventListener('change', (e) => bubbles.enabled = e.target.checked);
-    document.getElementById('chkCrt').addEventListener('change', (e) => {
-      document.getElementById('crtOverlay').style.display = e.target.checked ? 'block' : 'none';
-    });
-    document.getElementById('chkSoundFx').addEventListener('change', (e) => sound.soundEnabled = e.target.checked);
+    const chkBubbles = document.getElementById('chkBubbles');
+    if (chkBubbles) {
+      chkBubbles.addEventListener('change', (e) => {
+        if (typeof bubbles !== 'undefined' && bubbles) {
+          bubbles.setEnabled(e.target.checked, true);
+        }
+      });
+    }
+
+    const chkCrt = document.getElementById('chkCrt');
+    const crtOverlay = document.getElementById('crtOverlay');
+    if (chkCrt && crtOverlay) {
+      const savedCrt = localStorage.getItem('6sc_crt');
+      if (savedCrt === '1') {
+        chkCrt.checked = true;
+        crtOverlay.style.display = 'block';
+      } else {
+        chkCrt.checked = false;
+        crtOverlay.style.display = 'none';
+      }
+      chkCrt.addEventListener('change', (e) => {
+        localStorage.setItem('6sc_crt', e.target.checked ? '1' : '0');
+        crtOverlay.style.display = e.target.checked ? 'block' : 'none';
+      });
+    }
+
+    const chkSoundFx = document.getElementById('chkSoundFx');
+    if (chkSoundFx) {
+      const savedSound = localStorage.getItem('6sc_soundfx');
+      if (savedSound !== null) {
+        chkSoundFx.checked = savedSound === '1';
+        if (typeof sound !== 'undefined') sound.soundEnabled = chkSoundFx.checked;
+      }
+      chkSoundFx.addEventListener('change', (e) => {
+        localStorage.setItem('6sc_soundfx', e.target.checked ? '1' : '0');
+        if (typeof sound !== 'undefined') sound.soundEnabled = e.target.checked;
+      });
+    }
 
     window.addEventListener('pointermove', (e) => {
       if (typeof themeCtrl !== 'undefined' && themeCtrl.sparklesEnabled && Math.random() < 0.25) {
@@ -7213,11 +7276,11 @@ Digitally Verified & Signed:
           btn.classList.toggle('active', !!(w && wallpaper && (wallpaper.includes(w) || w.includes(wallpaper))));
         });
 
-        // 7. Toggle bubbles according to theme preset
+        // 7. Toggle bubbles: respect explicit user preference if saved, otherwise use theme preset
         if (typeof bubbles !== 'undefined' && bubbles) {
-          bubbles.enabled = !!themeData.bubbles;
-          const chkBubbles = document.getElementById('chkBubbles');
-          if (chkBubbles) chkBubbles.checked = !!themeData.bubbles;
+          const userBubblePref = localStorage.getItem('6sc_bubbles');
+          const shouldEnableBubbles = userBubblePref !== null ? (userBubblePref === '1') : !!themeData.bubbles;
+          bubbles.setEnabled(shouldEnableBubbles, false);
         }
 
         // 8. Save to localStorage
@@ -7316,8 +7379,14 @@ Digitally Verified & Signed:
         // Sparkles checkbox
         const chkSparkles = document.getElementById('chkSparkles');
         if (chkSparkles) {
+          const savedSparkles = localStorage.getItem('6sc_sparkles');
+          if (savedSparkles !== null) {
+            this.sparklesEnabled = savedSparkles === '1';
+            chkSparkles.checked = this.sparklesEnabled;
+          }
           chkSparkles.addEventListener('change', (e) => {
             this.sparklesEnabled = e.target.checked;
+            localStorage.setItem('6sc_sparkles', e.target.checked ? '1' : '0');
           });
         }
 
@@ -7339,6 +7408,7 @@ Digitally Verified & Signed:
     window.player = player;
     window.wm = wm;
     window.sound = sound;
+    window.TRACKS = TRACKS;
   </script>
 </body>
 </html>
