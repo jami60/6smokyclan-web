@@ -3423,7 +3423,7 @@
             <div class="wmp-tab" id="tabMediaGuide">Beat Catalog</div>
             <div class="wmp-tab" id="tabLicensing">Licensing Terms</div>
           </div>
-          <div class="wmp-main-stage">
+          <div class="wmp-main-stage" id="wmpStageNowPlaying">
             <div class="wmp-screen-area">
               <div class="wmp-screen-overlay">
                 <div class="wmp-lcd-badge">
@@ -3451,6 +3451,54 @@
                 <input type="text" class="wmp-search-box" id="playlistSearch" placeholder="Filter beats...">
               </div>
               <div class="wmp-playlist-items" id="playlistContainer"></div>
+            </div>
+          </div>
+
+          <!-- WMP IN-PLAYER BEAT CATALOG TAB VIEW -->
+          <div class="wmp-main-stage" id="wmpStageCatalog" style="display:none; flex-direction:column; background:#040911; padding:8px 10px; overflow-y:auto; gap:6px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #1a324d; padding-bottom:6px;">
+              <div>
+                <span style="font-weight:bold; color:#00e5ff; font-size:12px;">🎵 6SC Beat Vault Catalog</span>
+                <span style="font-size:10px; color:#64748b; margin-left:6px;">Ambient Trap • Cloud Rap • Free For Profit</span>
+              </div>
+              <button class="wmp-toggle-btn active" id="btnWmpOpenStoreWin" style="font-size:10px;">🛍️ Open Full Beat Store ↗</button>
+            </div>
+            <div id="wmpCatalogList" style="display:flex; flex-direction:column; gap:4px; margin-top:4px;"></div>
+          </div>
+
+          <!-- WMP IN-PLAYER LICENSING TERMS TAB VIEW -->
+          <div class="wmp-main-stage" id="wmpStageLicensing" style="display:none; flex-direction:column; background:#040911; padding:10px 12px; overflow-y:auto; gap:10px; color:#e2e8f0; font-size:11px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #1a324d; padding-bottom:6px;">
+              <div>
+                <span style="font-weight:bold; color:#00e5ff; font-size:12px;">📜 6SC Clan Licensing Agreement &amp; Pricing</span>
+                <span style="font-size:10px; color:#94a3b8; display:block;">Instant Untagged Delivery • Keep 100% Streaming Royalties</span>
+              </div>
+              <button class="wmp-toggle-btn active" id="btnWmpOpenLicStoreWin" style="font-size:10px;">🛒 Open Cart / Store ↗</button>
+            </div>
+            <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap:8px;">
+              <div style="background:#071526; border:1px solid #0284c7; border-radius:4px; padding:8px;">
+                <div style="font-weight:bold; color:#38bdf8;">MP3 LEASE</div>
+                <div style="font-size:16px; font-weight:900; color:#fff;">$29.99</div>
+                <div style="font-size:9px; color:#94a3b8; margin-top:4px;">Untagged MP3 • 50k Streams • 1 Music Video</div>
+              </div>
+              <div style="background:#071526; border:1px solid #00e5ff; border-radius:4px; padding:8px;">
+                <div style="font-weight:bold; color:#00e5ff;">WAV LEASE</div>
+                <div style="font-size:16px; font-weight:900; color:#fff;">$49.99</div>
+                <div style="font-size:9px; color:#94a3b8; margin-top:4px;">HQ 24-bit WAV + MP3 • 250k Streams • Radio Play</div>
+              </div>
+              <div style="background:#071526; border:1px solid #a855f7; border-radius:4px; padding:8px;">
+                <div style="font-weight:bold; color:#c084fc;">TRACKOUT STEMS</div>
+                <div style="font-size:16px; font-weight:900; color:#fff;">$99.99</div>
+                <div style="font-size:9px; color:#94a3b8; margin-top:4px;">Full Stems / Trackouts • Unlimited Radio • 500k Streams</div>
+              </div>
+              <div style="background:#071526; border:1px solid #f59e0b; border-radius:4px; padding:8px;">
+                <div style="font-weight:bold; color:#fbbf24;">UNLIMITED PRO</div>
+                <div style="font-size:16px; font-weight:900; color:#fff;">$199.99</div>
+                <div style="font-size:9px; color:#94a3b8; margin-top:4px;">Unlimited Streaming • Profit Cap: None • Worldwide</div>
+              </div>
+            </div>
+            <div style="background:#020b17; border:1px solid #1e293b; border-radius:4px; padding:8px; font-size:10px; line-height:1.5;">
+              <strong>GENERAL TERMS:</strong> All beats produced by <strong>6SCjami</strong> / <strong>6smokyclan</strong>. Free-for-profit YouTube/SoundCloud credit required: (prod. 6SCjami). Commercial releases require a valid license purchase.
             </div>
           </div>
           <div class="wmp-controls-deck">
@@ -5085,9 +5133,10 @@ Sound: Ethereal Ambient Trap, Cloud Rap, xaviersobased Type Beats
         if (waPlay) {
           waPlay.style.color = isPlaying ? '#00e5ff' : '';
         }
-        if (typeof store !== 'undefined' && store) {
-          store.highlightBeatRow(this.currentTrackIndex);
+        if (window.store && typeof window.store.highlightBeatRow === 'function') {
+          window.store.highlightBeatRow(this.currentTrackIndex);
         }
+        this.renderWmpCatalog();
       }
 
       setupScrubber() {
@@ -5130,6 +5179,70 @@ Sound: Ethereal Ambient Trap, Cloud Rap, xaviersobased Type Beats
         this.canvas.height = this.canvas.parentElement.clientHeight;
       }
 
+      switchWmpTab(tab) {
+        const tabNowPlaying = document.getElementById('tabNowPlaying');
+        const tabMediaGuide = document.getElementById('tabMediaGuide');
+        const tabLicensing = document.getElementById('tabLicensing');
+        const stageNowPlaying = document.getElementById('wmpStageNowPlaying');
+        const stageCatalog = document.getElementById('wmpStageCatalog');
+        const stageLicensing = document.getElementById('wmpStageLicensing');
+
+        if (tabNowPlaying) tabNowPlaying.classList.toggle('active', tab === 'nowplaying');
+        if (tabMediaGuide) tabMediaGuide.classList.toggle('active', tab === 'catalog');
+        if (tabLicensing) tabLicensing.classList.toggle('active', tab === 'licensing');
+
+        if (stageNowPlaying) stageNowPlaying.style.display = tab === 'nowplaying' ? 'flex' : 'none';
+        if (stageCatalog) {
+          stageCatalog.style.display = tab === 'catalog' ? 'flex' : 'none';
+          if (tab === 'catalog') this.renderWmpCatalog();
+        }
+        if (stageLicensing) stageLicensing.style.display = tab === 'licensing' ? 'flex' : 'none';
+
+        if (sound) sound.playClick();
+      }
+
+      renderWmpCatalog() {
+        const list = document.getElementById('wmpCatalogList');
+        if (!list) return;
+        list.innerHTML = '';
+        TRACKS.forEach((track, idx) => {
+          const isCurrent = this.currentTrackIndex === idx;
+          const row = document.createElement('div');
+          row.className = 'wmp-catalog-row';
+          row.style.cssText = `display:flex; justify-content:space-between; align-items:center; background:${isCurrent ? '#0b2642' : '#081626'}; border:1px solid ${isCurrent ? '#00e5ff' : '#142a42'}; border-radius:4px; padding:5px 8px;`;
+          row.innerHTML = `
+            <div style="display:flex; align-items:center; gap:8px;">
+              <button class="wmp-catalog-play-btn" style="width:24px; height:24px; border-radius:50%; background:#0055ea; border:1px solid #388eff; color:#fff; font-size:10px; cursor:pointer; display:flex; align-items:center; justify-content:center;">
+                ${isCurrent && this.isPlaying ? '⏸' : '▶'}
+              </button>
+              <div>
+                <div style="color:#fff; font-size:11px; font-weight:bold;">${track.title}</div>
+                <div style="color:#7dd3fc; font-size:9px;">${track.genre} • ${track.bpm} • ${track.key}</div>
+              </div>
+            </div>
+            <div style="display:flex; align-items:center; gap:6px;">
+              <span style="font-size:10px; color:#22c55e; font-weight:bold;">${track.type}</span>
+              <button class="sb-btn-lease" style="padding:3px 8px; font-size:9px;" data-lease-idx="${idx}">🛒 $29.99</button>
+            </div>
+          `;
+          row.querySelector('.wmp-catalog-play-btn').addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (this.currentTrackIndex === idx) {
+              this.togglePlay();
+            } else {
+              this.loadTrack(idx, true);
+            }
+          });
+          row.querySelector('.sb-btn-lease').addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (window.store && typeof window.store.openLicenseModal === 'function') {
+              window.store.openLicenseModal(track);
+            }
+          });
+          list.appendChild(row);
+        });
+      }
+
       setupEvents() {
         this.btnPlayPause.addEventListener('click', () => this.togglePlay());
         this.btnPrev.addEventListener('click', () => this.prevTrack());
@@ -5149,6 +5262,25 @@ Sound: Ethereal Ambient Trap, Cloud Rap, xaviersobased Type Beats
         this.playlistSearch.addEventListener('input', (e) => {
           this.searchQuery = e.target.value.toLowerCase();
           this.renderPlaylist();
+        });
+
+        // WMP in-player tab switching
+        const tabNowPlaying = document.getElementById('tabNowPlaying');
+        const tabMediaGuide = document.getElementById('tabMediaGuide');
+        const tabLicensing = document.getElementById('tabLicensing');
+        if (tabNowPlaying) tabNowPlaying.addEventListener('click', () => this.switchWmpTab('nowplaying'));
+        if (tabMediaGuide) tabMediaGuide.addEventListener('click', () => this.switchWmpTab('catalog'));
+        if (tabLicensing) tabLicensing.addEventListener('click', () => this.switchWmpTab('licensing'));
+
+        const btnStoreWin = document.getElementById('btnWmpOpenStoreWin');
+        if (btnStoreWin) btnStoreWin.addEventListener('click', () => {
+          if (window.wm) window.wm.openWindow('windowBeatStore');
+          if (window.store) window.store.switchTab('beats');
+        });
+        const btnLicWin = document.getElementById('btnWmpOpenLicStoreWin');
+        if (btnLicWin) btnLicWin.addEventListener('click', () => {
+          if (window.wm) window.wm.openWindow('windowBeatStore');
+          if (window.store) window.store.switchTab('licensing');
         });
 
         // Volume slider
@@ -5266,8 +5398,8 @@ Sound: Ethereal Ambient Trap, Cloud Rap, xaviersobased Type Beats
         }
 
         this.renderPlaylist();
-        if (typeof store !== 'undefined' && store) {
-          store.highlightBeatRow(index);
+        if (window.store && typeof window.store.highlightBeatRow === 'function') {
+          window.store.highlightBeatRow(index);
         }
       }
 
@@ -5432,11 +5564,12 @@ Sound: Ethereal Ambient Trap, Cloud Rap, xaviersobased Type Beats
         ctx.stroke();
       }
     }
-    const player = new WmpPlayerEngine();
+    var player = new WmpPlayerEngine();
+    window.player = player;
 
     window.onYouTubeIframeAPIReady = function() {
-      if (player && typeof player.initYt === 'function') {
-        player.initYt();
+      if (window.player && typeof window.player.initYt === 'function') {
+        window.player.initYt();
       }
     };
 
@@ -6345,23 +6478,7 @@ Volume Serial Number is 6SC0-2006<br><br>
         this.setupEventListeners();
         this.updateCartBadge();
 
-        // Wire WMP tabs to Beat Store
-        const tabGuide = document.getElementById('tabMediaGuide');
-        const tabLic = document.getElementById('tabLicensing');
-        if (tabGuide) {
-          tabGuide.addEventListener('click', () => {
-            wm.openWindow('windowBeatStore');
-            this.switchTab('beats');
-            sound.playClick();
-          });
-        }
-        if (tabLic) {
-          tabLic.addEventListener('click', () => {
-            wm.openWindow('windowBeatStore');
-            this.switchTab('licensing');
-            sound.playClick();
-          });
-        }
+
 
         // Also wire Internet Explorer featured button
         const btnFeat = document.getElementById('btnPlayFeatured');
@@ -6998,7 +7115,8 @@ Digitally Verified & Signed:
       }
     }
 
-    const store = new SmokeyBeatStoreEngine();
+    var store = new SmokeyBeatStoreEngine();
+    window.store = store;
 
     // Sync beat store highlight with WMP player updates
     const origLoadTrack = player.loadTrack.bind(player);
@@ -7215,7 +7333,7 @@ Digitally Verified & Signed:
       }
     }
 
-    const themeCtrl = new ThemeController();
+    var themeCtrl = new ThemeController();
     window.themeCtrl = themeCtrl;
     window.store = store;
     window.player = player;
