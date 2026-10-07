@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>6smokyclan (6sc) — Windows XP Aero Edition</title>
   <link rel="icon" type="image/jpeg" href="assets/logo.jpg">
+  <script src="https://www.youtube.com/iframe_api"></script>
   
   <style>
     /* ==========================================================================
@@ -3440,7 +3441,7 @@
               </div>
               <canvas id="visualizerCanvas"></canvas>
               <!-- Hidden or visible without killing playback! -->
-              <iframe id="wmpVideoFrame" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+              <iframe id="wmpVideoFrame" src="https://www.youtube.com/embed/3lkKWHvu7zc?enablejsapi=1&autoplay=0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
             </div>
             <div class="wmp-playlist-panel">
               <div class="wmp-playlist-header">
@@ -4904,7 +4905,7 @@ Sound: Ethereal Ambient Trap, Cloud Rap, xaviersobased Type Beats
     }
     const wm = new WindowManager();
 
-    /* WMP 10 ENGINE (FIXED: AUDIO CONTINUES IN VISUALIZER MODE) */
+    /* WMP 10 ENGINE (FULL YOUTUBE EMBED API & REAL-TIME SEEK/PLAY SYNC) */
     class WmpPlayerEngine {
       constructor() {
         this.currentTrackIndex = 0;
@@ -4912,6 +4913,10 @@ Sound: Ethereal Ambient Trap, Cloud Rap, xaviersobased Type Beats
         this.mode = 'vis';
         this.searchQuery = '';
         this.shuffle = false;
+        this.volume = 85;
+        this.isMuted = false;
+        this.ytPlayer = null;
+        this.ytReady = false;
 
         this.videoFrame = document.getElementById('wmpVideoFrame');
         this.canvas = document.getElementById('visualizerCanvas');
@@ -4928,6 +4933,8 @@ Sound: Ethereal Ambient Trap, Cloud Rap, xaviersobased Type Beats
         this.btnModeVis = document.getElementById('btnModeVis');
         this.btnModeVid = document.getElementById('btnModeVid');
         this.btnOpenYt = document.getElementById('btnOpenYt');
+        this.btnMute = document.getElementById('btnMute');
+        this.volSlider = document.getElementById('wmpVolume');
         this.playlistContainer = document.getElementById('playlistContainer');
         this.playlistSearch = document.getElementById('playlistSearch');
         this.progressBarFill = document.getElementById('progressBarFill');
@@ -4941,18 +4948,188 @@ Sound: Ethereal Ambient Trap, Cloud Rap, xaviersobased Type Beats
 
         this.init();
       }
+
       init() {
         this.renderPlaylist();
         this.setupEvents();
+        this.setupScrubber();
+        this.setupPostMessageListener();
         this.resizeVis();
         window.addEventListener('resize', () => this.resizeVis());
         this.animateVis();
         this.loadTrack(0, false);
+
+        if (typeof YT !== 'undefined' && YT.Player) {
+          this.initYt();
+        }
       }
+
+      initYt() {
+        if (this.ytReady || !this.videoFrame) return;
+        try {
+          this.ytPlayer = new YT.Player('wmpVideoFrame', {
+            events: {
+              'onReady': () => {
+                this.ytReady = true;
+                try {
+                  this.ytPlayer.setVolume(this.volume);
+                } catch(e) {}
+              },
+              'onStateChange': (e) => {
+                this.onPlayerStateChange(e.data);
+              }
+            }
+          });
+        } catch(e) {
+          console.warn('YT.Player init notice:', e);
+        }
+      }
+
+      sendYt(func, args = []) {
+        // 1. Official YT.Player instance if initialized
+        if (this.ytPlayer && this.ytReady && typeof this.ytPlayer[func] === 'function') {
+          try {
+            this.ytPlayer[func](...args);
+            return;
+          } catch(e) {}
+        }
+        // 2. Direct postMessage fallback to iframe
+        const frame = this.videoFrame || document.getElementById('wmpVideoFrame');
+        if (frame && frame.contentWindow) {
+          try {
+            frame.contentWindow.postMessage(JSON.stringify({
+              event: 'command',
+              func: func,
+              args: args || []
+            }), '*');
+          } catch(e) {}
+        }
+      }
+
+      setupPostMessageListener() {
+        window.addEventListener('message', (event) => {
+          if (!event.data) return;
+          let data = event.data;
+          if (typeof data === 'string') {
+            try { data = JSON.parse(data); } catch(e) { return; }
+          }
+          if (!data) return;
+
+          if (data.event === 'infoDelivery' && data.info) {
+            if (typeof data.info.currentTime === 'number') {
+              this.onTimeUpdate(data.info.currentTime, data.info.duration);
+            }
+            if (typeof data.info.playerState === 'number') {
+              this.onPlayerStateChange(data.info.playerState);
+            }
+          } else if (data.event === 'onStateChange' && typeof data.info === 'number') {
+            this.onPlayerStateChange(data.info);
+          }
+        });
+
+        if (this.videoFrame) {
+          this.videoFrame.addEventListener('load', () => {
+            try {
+              this.videoFrame.contentWindow.postMessage(JSON.stringify({
+                event: 'listening',
+                id: 1
+              }), '*');
+            } catch(e) {}
+          });
+        }
+      }
+
+      onPlayerStateChange(state) {
+        // 1: PLAYING
+        if (state === 1) {
+          this.isPlaying = true;
+          this.updatePlayStateUI(true);
+          this.startProgressTicker();
+        }
+        // 2: PAUSED
+        else if (state === 2) {
+          this.isPlaying = false;
+          this.updatePlayStateUI(false);
+          this.stopProgressTicker();
+        }
+        // 0: ENDED
+        else if (state === 0) {
+          this.nextTrack();
+        }
+        // 3: BUFFERING
+        else if (state === 3) {
+          if (this.wmpStatus) this.wmpStatus.textContent = 'Buffering: ' + (TRACKS[this.currentTrackIndex]?.title || '');
+        }
+      }
+
+      onTimeUpdate(current, duration) {
+        if (typeof duration === 'number' && duration > 0) {
+          this.durationSeconds = Math.floor(duration);
+        }
+        if (typeof current === 'number' && current >= 0) {
+          this.currentSeconds = Math.floor(current);
+          this.updateTime();
+        }
+      }
+
+      updatePlayStateUI(isPlaying) {
+        this.isPlaying = isPlaying;
+        if (this.btnPlayPause) {
+          this.btnPlayPause.textContent = isPlaying ? '⏸' : '▶';
+        }
+        if (this.wmpStatus) {
+          const track = TRACKS[this.currentTrackIndex];
+          this.wmpStatus.textContent = isPlaying ? `Playing: ${track ? track.title : ''}` : 'Paused';
+        }
+        const waPlay = document.getElementById('waPlay');
+        if (waPlay) {
+          waPlay.style.color = isPlaying ? '#00e5ff' : '';
+        }
+        if (typeof store !== 'undefined' && store) {
+          store.highlightBeatRow(this.currentTrackIndex);
+        }
+      }
+
+      setupScrubber() {
+        const barBg = document.getElementById('progressBarBg');
+        if (!barBg) return;
+
+        let isDown = false;
+        const calcAndSeek = (e) => {
+          const rect = barBg.getBoundingClientRect();
+          if (rect.width <= 0) return;
+          const ratio = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+          const sec = Math.floor(ratio * this.durationSeconds);
+          this.seek(sec);
+        };
+
+        barBg.addEventListener('pointerdown', (e) => {
+          isDown = true;
+          try { barBg.setPointerCapture(e.pointerId); } catch(err){}
+          calcAndSeek(e);
+        });
+
+        barBg.addEventListener('pointermove', (e) => {
+          if (isDown) calcAndSeek(e);
+        });
+
+        const stopScrub = (e) => {
+          if (isDown) {
+            isDown = false;
+            try { barBg.releasePointerCapture(e.pointerId); } catch(err){}
+          }
+        };
+
+        barBg.addEventListener('pointerup', stopScrub);
+        barBg.addEventListener('pointercancel', stopScrub);
+      }
+
       resizeVis() {
+        if (!this.canvas || !this.canvas.parentElement) return;
         this.canvas.width = this.canvas.parentElement.clientWidth;
         this.canvas.height = this.canvas.parentElement.clientHeight;
       }
+
       setupEvents() {
         this.btnPlayPause.addEventListener('click', () => this.togglePlay());
         this.btnPrev.addEventListener('click', () => this.prevTrack());
@@ -4966,18 +5143,43 @@ Sound: Ethereal Ambient Trap, Cloud Rap, xaviersobased Type Beats
         this.btnModeVis.addEventListener('click', () => this.setMode('vis'));
         this.btnModeVid.addEventListener('click', () => this.setMode('vid'));
         this.btnOpenYt.addEventListener('click', () => {
-          window.open(`https://www.youtube.com/watch?v=${TRACKS[this.currentTrackIndex].videoId}`, '_blank');
+          const track = TRACKS[this.currentTrackIndex];
+          if (track) window.open(`https://www.youtube.com/watch?v=${track.videoId}`, '_blank');
         });
         this.playlistSearch.addEventListener('input', (e) => {
           this.searchQuery = e.target.value.toLowerCase();
           this.renderPlaylist();
         });
-        document.getElementById('progressBarBg').addEventListener('click', (e) => {
-          const rect = e.currentTarget.getBoundingClientRect();
-          this.currentSeconds = Math.floor(((e.clientX - rect.left) / rect.width) * this.durationSeconds);
-          this.updateTime();
-        });
+
+        // Volume slider
+        if (this.volSlider) {
+          this.volSlider.addEventListener('input', (e) => {
+            this.volume = parseInt(e.target.value, 10);
+            this.sendYt('setVolume', [this.volume]);
+            if (this.isMuted && this.volume > 0) {
+              this.isMuted = false;
+              this.sendYt('unMute');
+              if (this.btnMute) this.btnMute.textContent = '🔊';
+            }
+          });
+        }
+
+        // Mute button
+        if (this.btnMute) {
+          this.btnMute.addEventListener('click', () => {
+            this.isMuted = !this.isMuted;
+            if (this.isMuted) {
+              this.sendYt('mute');
+              this.btnMute.textContent = '🔇';
+            } else {
+              this.sendYt('unMute');
+              this.btnMute.textContent = '🔊';
+            }
+            sound.playClick();
+          });
+        }
       }
+
       setMode(mode) {
         this.mode = mode;
         if (mode === 'vis') {
@@ -4991,6 +5193,7 @@ Sound: Ethereal Ambient Trap, Cloud Rap, xaviersobased Type Beats
         }
         sound.playClick();
       }
+
       renderPlaylist() {
         this.playlistContainer.innerHTML = '';
         const filtered = TRACKS.filter(t => t.title.toLowerCase().includes(this.searchQuery) || t.genre.toLowerCase().includes(this.searchQuery));
@@ -5007,12 +5210,18 @@ Sound: Ethereal Ambient Trap, Cloud Rap, xaviersobased Type Beats
           `;
           item.addEventListener('click', () => {
             const idx = TRACKS.findIndex(t => t.id === track.id);
-            this.loadTrack(idx, true);
+            if (this.currentTrackIndex === idx) {
+              this.togglePlay();
+            } else {
+              this.loadTrack(idx, true);
+            }
           });
           this.playlistContainer.appendChild(item);
         });
       }
+
       loadTrack(index, autoplay = false) {
+        if (index < 0 || index >= TRACKS.length) return;
         this.currentTrackIndex = index;
         const track = TRACKS[index];
         if (!track) return;
@@ -5022,67 +5231,165 @@ Sound: Ethereal Ambient Trap, Cloud Rap, xaviersobased Type Beats
         this.lcdGenre.textContent = track.genre;
         this.lcdType.textContent = track.type;
         this.currentSeconds = 0;
-        this.durationSeconds = 145 + (index * 7) % 40;
+        this.durationSeconds = 150;
         this.updateTime();
 
-        // Update iframe source
-        this.videoFrame.src = `https://www.youtube.com/embed/${track.videoId}?autoplay=${autoplay ? 1 : 0}&enablejsapi=1`;
+        const origin = encodeURIComponent(window.location.origin || 'http://localhost:3000');
+
+        if (this.ytPlayer && this.ytReady) {
+          try {
+            if (autoplay) {
+              this.ytPlayer.loadVideoById(track.videoId);
+            } else {
+              this.ytPlayer.cueVideoById(track.videoId);
+            }
+          } catch(e) {
+            this.videoFrame.src = `https://www.youtube.com/embed/${track.videoId}?enablejsapi=1&autoplay=${autoplay ? 1 : 0}&origin=${origin}&widgetid=1`;
+          }
+        } else {
+          this.videoFrame.src = `https://www.youtube.com/embed/${track.videoId}?enablejsapi=1&autoplay=${autoplay ? 1 : 0}&origin=${origin}&widgetid=1`;
+        }
 
         // Update MSN & Winamp status
-        document.getElementById('msnStatusText').textContent = `Faded 🎵 Listening to: ${track.title}`;
-        document.getElementById('winampTicker').textContent = `${index + 1}. 6SCjami - ${track.title} (${track.bpm}) *** 320kbps 44kHz ***`;
+        const msn = document.getElementById('msnStatusText');
+        if (msn) msn.textContent = `Faded 🎵 Listening to: ${track.title}`;
+        const winTicker = document.getElementById('winampTicker');
+        if (winTicker) winTicker.textContent = `${index + 1}. 6SCjami - ${track.title} (${track.bpm}) *** 320kbps 44kHz ***`;
 
         showBalloon("Now Playing in 6SC Player", `${track.title} • ${track.genre}`);
 
-        if (autoplay) this.play(); else this.pause();
+        this.updatePlayStateUI(autoplay);
+        if (autoplay) {
+          this.startProgressTicker();
+        } else {
+          this.stopProgressTicker();
+        }
+
         this.renderPlaylist();
+        if (typeof store !== 'undefined' && store) {
+          store.highlightBeatRow(index);
+        }
       }
-      togglePlay() { if (this.isPlaying) this.pause(); else this.play(); sound.playClick(); }
+
+      togglePlay() {
+        sound.playClick();
+        if (this.isPlaying) {
+          this.pause();
+        } else {
+          this.play();
+        }
+      }
+
       play() {
+        const track = TRACKS[this.currentTrackIndex];
+        if (!track) return;
+
+        if (!this.videoFrame.src || !this.videoFrame.src.includes(track.videoId)) {
+          this.loadTrack(this.currentTrackIndex, true);
+          return;
+        }
+
         this.isPlaying = true;
-        this.btnPlayPause.textContent = '⏸';
-        this.wmpStatus.textContent = 'Playing: ' + TRACKS[this.currentTrackIndex].title;
-        clearInterval(this.timer);
-        this.timer = setInterval(() => {
-          this.currentSeconds++;
-          if (this.currentSeconds >= this.durationSeconds) this.nextTrack();
-          this.updateTime();
-        }, 1000);
+        this.updatePlayStateUI(true);
+
+        this.sendYt('playVideo');
+
+        this.startProgressTicker();
       }
+
       pause() {
         this.isPlaying = false;
-        this.btnPlayPause.textContent = '▶';
-        this.wmpStatus.textContent = 'Paused';
-        clearInterval(this.timer);
+        this.updatePlayStateUI(false);
+
+        this.sendYt('pauseVideo');
+
+        this.stopProgressTicker();
       }
+
       stopTrack() {
         this.pause();
         this.currentSeconds = 0;
         this.updateTime();
-        this.videoFrame.src = '';
+        this.sendYt('stopVideo');
         this.wmpStatus.textContent = 'Stopped';
         sound.playClick();
       }
+
+      seek(sec) {
+        sec = Math.max(0, Math.min(this.durationSeconds, sec));
+        this.currentSeconds = Math.floor(sec);
+        this.updateTime();
+
+        this.sendYt('seekTo', [sec, true]);
+
+        if (this.isPlaying) {
+          this.sendYt('playVideo');
+        }
+      }
+
       nextTrack() {
         const next = this.shuffle ? Math.floor(Math.random() * TRACKS.length) : (this.currentTrackIndex + 1) % TRACKS.length;
         this.loadTrack(next, true);
         sound.playClick();
       }
+
       prevTrack() {
         const prev = (this.currentTrackIndex - 1 + TRACKS.length) % TRACKS.length;
         this.loadTrack(prev, true);
         sound.playClick();
       }
+
       formatTime(sec) {
-        const m = Math.floor(sec / 60); const s = Math.floor(sec % 60);
+        sec = Math.max(0, Math.floor(sec || 0));
+        const m = Math.floor(sec / 60);
+        const s = Math.floor(sec % 60);
         return `${m}:${s < 10 ? '0' : ''}${s}`;
       }
+
       updateTime() {
-        this.currentTimeEl.textContent = this.formatTime(this.currentSeconds);
-        this.totalTimeEl.textContent = this.formatTime(this.durationSeconds);
-        this.progressBarFill.style.width = ((this.currentSeconds / this.durationSeconds) * 100) + '%';
-        document.getElementById('winampTime').textContent = this.formatTime(this.currentSeconds);
+        if (this.currentTimeEl) this.currentTimeEl.textContent = this.formatTime(this.currentSeconds);
+        if (this.totalTimeEl) this.totalTimeEl.textContent = this.formatTime(this.durationSeconds);
+        if (this.progressBarFill && this.durationSeconds > 0) {
+          const pct = Math.max(0, Math.min(100, (this.currentSeconds / this.durationSeconds) * 100));
+          this.progressBarFill.style.width = pct + '%';
+        }
+        const winTime = document.getElementById('winampTime');
+        if (winTime) winTime.textContent = this.formatTime(this.currentSeconds);
       }
+
+      startProgressTicker() {
+        this.stopProgressTicker();
+        this.timer = setInterval(() => {
+          if (this.ytPlayer && this.ytReady && typeof this.ytPlayer.getCurrentTime === 'function') {
+            try {
+              const cur = this.ytPlayer.getCurrentTime();
+              const dur = this.ytPlayer.getDuration();
+              if (typeof dur === 'number' && dur > 0) {
+                this.durationSeconds = Math.floor(dur);
+              }
+              if (typeof cur === 'number' && cur >= 0) {
+                this.currentSeconds = Math.floor(cur);
+                this.updateTime();
+                return;
+              }
+            } catch(e) {}
+          }
+
+          this.currentSeconds++;
+          if (this.currentSeconds >= this.durationSeconds) {
+            this.nextTrack();
+          }
+          this.updateTime();
+        }, 1000);
+      }
+
+      stopProgressTicker() {
+        if (this.timer) {
+          clearInterval(this.timer);
+          this.timer = null;
+        }
+      }
+
       animateVis() {
         requestAnimationFrame(() => this.animateVis());
         if (this.mode !== 'vis') return;
@@ -5126,6 +5433,12 @@ Sound: Ethereal Ambient Trap, Cloud Rap, xaviersobased Type Beats
       }
     }
     const player = new WmpPlayerEngine();
+
+    window.onYouTubeIframeAPIReady = function() {
+      if (player && typeof player.initYt === 'function') {
+        player.initYt();
+      }
+    };
 
     /* WINAMP CONTROLS SYNC */
     document.getElementById('waPlay').addEventListener('click', () => player.play());
@@ -6279,8 +6592,8 @@ Volume Serial Number is 6SC0-2006<br><br>
           const playBtn = tr.querySelector('.sb-play-btn');
           const titleBtn = tr.querySelector('.sb-track-name');
           const handlePlay = () => {
-            if (player.currentTrackIndex === originalIdx && player.isPlaying) {
-              player.pause();
+            if (player.currentTrackIndex === originalIdx) {
+              player.togglePlay();
             } else {
               player.loadTrack(originalIdx, true);
             }
@@ -6701,6 +7014,11 @@ Digitally Verified & Signed:
     const origPause = player.pause.bind(player);
     player.pause = function() {
       origPause();
+      store.highlightBeatRow(player.currentTrackIndex);
+    };
+    const origTogglePlay = player.togglePlay.bind(player);
+    player.togglePlay = function() {
+      origTogglePlay();
       store.highlightBeatRow(player.currentTrackIndex);
     };
 
