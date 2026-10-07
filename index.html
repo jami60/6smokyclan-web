@@ -2804,14 +2804,22 @@
     }
 
     body[data-theme="royale"] {
-      --xp-blue-dark: #334155;
-      --xp-blue-light: #94a3b8;
-      --xp-taskbar-bg: linear-gradient(to bottom, #475569 0%, #334155 18%, #1e293b 92%, #0f172a 100%);
-      --xp-start-bg: linear-gradient(to bottom, #f59e0b 0%, #d97706 30%, #b45309 80%, #78350f 100%);
-      --xp-window-bg: #f1f5f9;
-      --xp-border: #475569;
-      --xp-titlebar: linear-gradient(to bottom, #64748b 0%, #475569 40%, #334155 88%, #1e293b 100%);
+      --xp-blue-dark: #1e3a8a;
+      --xp-blue-light: #60a5fa;
+      --xp-taskbar-bg: linear-gradient(to bottom, #2563eb 0%, #1d4ed8 15%, #1e40af 85%, #172554 100%);
+      --xp-start-bg: linear-gradient(to bottom, #10b981 0%, #059669 30%, #047857 80%, #064e3b 100%);
+      --xp-window-bg: #f8fafc;
+      --xp-border: #1d4ed8;
+      --xp-titlebar: linear-gradient(to bottom, #3b82f6 0%, #2563eb 35%, #1d4ed8 85%, #1e3a8a 100%);
       --xp-titlebar-inactive: linear-gradient(to bottom, #94a3b8 0%, #64748b 40%, #475569 100%);
+    }
+    body[data-theme="royale"] #taskbar {
+      border-top: 2px solid #60a5fa;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.45);
+    }
+    body[data-theme="royale"] .xp-window {
+      border-color: #1d4ed8;
+      box-shadow: 0 10px 30px rgba(30, 58, 138, 0.35);
     }
 
     body[data-theme="matrix"] {
@@ -3016,7 +3024,7 @@
       <button class="theme-quick-btn active" data-set-theme="luna" title="Windows XP Luna Blue">Luna</button>
       <button class="theme-quick-btn" data-set-theme="aero" title="Frutiger Aero Aqua Glass">Aero</button>
       <button class="theme-quick-btn" data-set-theme="vista" title="Windows Vista Aero Dark">Vista</button>
-      <button class="theme-quick-btn" data-set-theme="royale" title="Royale Noir Silver">Royale</button>
+      <button class="theme-quick-btn" data-set-theme="royale" title="Windows XP Royale (Classic Bliss)">Royale</button>
       <button class="theme-quick-btn" data-set-theme="matrix" title="Matrix Cyber Trap">Matrix</button>
     </div>
 
@@ -4052,9 +4060,12 @@ Sound: Ethereal Ambient Trap, Cloud Rap, xaviersobased Type Beats
 
         <fieldset style="border: 1px solid #7f9db9; padding: 10px; border-radius: 4px; background:#fff;">
           <legend style="padding: 0 4px; font-weight: bold; color: #003e6b;">Wallpaper Gallery</legend>
-          <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px;">
+          <div style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 6px;">
             <button class="wall-choice-btn active" id="btnWallDay" data-wall="assets/bliss.jpg">
-              <span>Bliss Day</span>
+              <span>Aero Bliss</span>
+            </button>
+            <button class="wall-choice-btn" id="btnWallRoyale" data-wall="assets/royale_bliss.jpg">
+              <span>Classic Bliss</span>
             </button>
             <button class="wall-choice-btn" id="btnWallNight" data-wall="assets/night_bliss.jpg">
               <span>Night Aurora</span>
@@ -6706,12 +6717,16 @@ Digitally Verified & Signed:
           luna: { name: 'Windows XP Luna Blue', wall: 'assets/bliss.jpg', bubbles: true },
           aero: { name: 'Frutiger Aero Aqua Glass', wall: 'assets/aqua_paradise.jpg', bubbles: true },
           vista: { name: 'Windows Vista Aero Dark', wall: 'assets/night_bliss.jpg', bubbles: false },
-          royale: { name: 'Royale Noir Silver', wall: 'assets/bliss.jpg', bubbles: true },
+          royale: { name: 'Windows XP Royale', wall: 'assets/royale_bliss.jpg', bubbles: false },
           matrix: { name: 'Cyber Matrix Trap', wall: 'assets/night_bliss.jpg', bubbles: false }
         };
 
         this.currentTheme = localStorage.getItem('6sc_theme') || 'luna';
-        this.currentWall = localStorage.getItem('6sc_wallpaper') || this.themes[this.currentTheme].wall;
+        let savedWall = localStorage.getItem('6sc_wallpaper');
+        if (this.currentTheme === 'royale' && (!savedWall || savedWall === 'assets/bliss.jpg')) {
+          savedWall = 'assets/royale_bliss.jpg';
+        }
+        this.currentWall = savedWall || this.themes[this.currentTheme].wall;
         this.sparklesEnabled = true;
 
         this.init();
@@ -6762,11 +6777,18 @@ Digitally Verified & Signed:
           btn.classList.toggle('active', !!(w && wallpaper && (wallpaper.includes(w) || w.includes(wallpaper))));
         });
 
-        // 7. Save to localStorage
+        // 7. Toggle bubbles according to theme preset
+        if (typeof bubbles !== 'undefined' && bubbles) {
+          bubbles.enabled = !!themeData.bubbles;
+          const chkBubbles = document.getElementById('chkBubbles');
+          if (chkBubbles) chkBubbles.checked = !!themeData.bubbles;
+        }
+
+        // 8. Save to localStorage
         localStorage.setItem('6sc_theme', themeId);
         localStorage.setItem('6sc_wallpaper', wallpaper);
 
-        // 8. Sound & Balloon Feedback
+        // 9. Sound & Balloon Feedback
         if (playSound && sound) {
           if (themeId === 'aero') sound.playWaterDrop();
           else if (themeId === 'matrix') sound.play808();
