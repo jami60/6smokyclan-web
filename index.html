@@ -1509,61 +1509,6 @@
       cursor: crosshair;
     }
 
-    /* ==========================================================================
-       CLIPPY-STYLE 6SC ASSISTANT
-       ========================================================================== */
-    #clippyAssistant {
-      position: absolute;
-      bottom: 50px;
-      right: 20px;
-      display: flex;
-      align-items: flex-end;
-      gap: 10px;
-      z-index: 9999;
-      cursor: pointer;
-      transition: transform 0.2s;
-    }
-
-    #clippyAssistant:hover {
-      transform: scale(1.05);
-    }
-
-    .clippy-bubble {
-      background: #ffffe1;
-      border: 1px solid #000;
-      border-radius: 6px;
-      padding: 8px 12px;
-      font-size: 11px;
-      box-shadow: 2px 2px 8px rgba(0,0,0,0.3);
-      max-width: 220px;
-      position: relative;
-    }
-
-    .clippy-bubble::after {
-      content: '';
-      position: absolute;
-      bottom: 12px;
-      right: -8px;
-      border-width: 6px 0 6px 8px;
-      border-style: solid;
-      border-color: transparent transparent transparent #ffffe1;
-    }
-
-    .clippy-pet {
-      width: 48px;
-      height: 48px;
-      border-radius: 50%;
-      box-shadow: 0 0 15px #00e5ff;
-      border: 2px solid #fff;
-      overflow: hidden;
-      background: #000;
-    }
-
-    .clippy-pet img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-    }
 
     /* ==========================================================================
        XP BALLOON TOOLTIP
@@ -4140,15 +4085,6 @@ Sound: Ethereal Ambient Trap, Cloud Rap, xaviersobased Type Beats
       </div>
     </div>
 
-    
-        <fieldset style="border: 1px solid #7f9db9; padding: 10px; border-radius: 4px; background:#fff;">
-          <legend style="padding: 0 4px; font-weight: bold; color: #003e6b;">Screensaver</legend>
-          <div style="display:flex; justify-content:space-between; align-items:center;">
-            <span>Screensaver activates after 75s idle.</span>
-            <button class="portal-btn-primary" id="btnTestScreensaver" style="padding:2px 8px; font-size:10px;">Test Screensaver</button>
-          </div>
-        </fieldset>
-
     <!-- ======================================================================
          WINDOW 15: RUN DIALOG (WIN+R)
          ====================================================================== -->
@@ -4211,17 +4147,7 @@ Sound: Ethereal Ambient Trap, Cloud Rap, xaviersobased Type Beats
       </div>
     </div>
 
-    <!-- ======================================================================
-         CLIPPY-STYLE 6SC ASSISTANT
-         ====================================================================== -->
-    <div id="clippyAssistant" title="Click for beat advice!">
-      <div class="clippy-bubble" id="clippySpeech">
-        Need a fire beat? Click 6SC Media Player to listen to all 15 tracks! 🛸
-      </div>
-      <div class="clippy-pet">
-        <img src="assets/logo.jpg" alt="6SC Bot">
-      </div>
-    </div>
+
 
     <!-- ======================================================================
          XP BALLOON POPUP TOOLTIP
@@ -5790,25 +5716,9 @@ Volume Serial Number is 6SC0-2006<br><br>
     const btnTestSs = document.getElementById('btnTestScreensaver'); if (btnTestSs) btnTestSs.addEventListener('click', startScreensaver);
     window.addEventListener('pointermove', () => { stopScreensaver(); ssIdleTimer = 0; });
     window.addEventListener('keydown', () => { stopScreensaver(); ssIdleTimer = 0; });
-    setInterval(() => {
-      ssIdleTimer++;
-      if (ssIdleTimer >= 75 && !ssActive) startScreensaver();
-    }, 1000);
+    // Automatic screensaver disabled to prevent unexpected interruption during music playback
 
-    /* CLIPPY ASSISTANT */
-    const clippyPhrases = [
-      "🔥 Tip: All beats marked '(free for profit)' are free on Spotify & Apple!",
-      "🤫 Looking for the rare unreleased beat? The password is: faded6sc",
-      "💽 Double-click Drive (F:) in My Computer to spin the virtual CD album!",
-      "⚡ Nudge someone in MSN Messenger to rattle their screen!",
-      "💻 Type 'whoami' or 'secret' inside Command Prompt for easter eggs."
-    ];
-    let clipIdx = 0;
-    document.getElementById('clippyAssistant').addEventListener('click', () => {
-      clipIdx = (clipIdx + 1) % clippyPhrases.length;
-      document.getElementById('clippySpeech').textContent = clippyPhrases[clipIdx];
-      sound.playClick();
-    });
+
 
     /* EFFECTS & NOSTALGIA */
     document.getElementById('chkBubbles').addEventListener('change', (e) => bubbles.enabled = e.target.checked);
