@@ -3010,14 +3010,14 @@
 
     <!-- FLOATING DESKTOP QUICK THEME BAR -->
     <div id="desktopThemeBar" class="desktop-theme-bar">
-      <span style="font-weight:bold; font-size:10px; color:#fff; display:flex; align-items:center; gap:4px;">
-        🎨 THEME:
+      <span style="font-weight:bold; font-size:10px; color:#fff; display:flex; align-items:center; gap:4px; letter-spacing:0.5px;">
+        THEME:
       </span>
-      <button class="theme-quick-btn active" data-set-theme="luna" title="Windows XP Luna Blue">🌞 Luna</button>
-      <button class="theme-quick-btn" data-set-theme="aero" title="Frutiger Aero Aqua Glass">🌊 Aero</button>
-      <button class="theme-quick-btn" data-set-theme="vista" title="Windows Vista Aero Dark">🌌 Vista</button>
-      <button class="theme-quick-btn" data-set-theme="royale" title="Royale Noir Silver">💿 Royale</button>
-      <button class="theme-quick-btn" data-set-theme="matrix" title="Matrix Cyber Trap">📟 Matrix</button>
+      <button class="theme-quick-btn active" data-set-theme="luna" title="Windows XP Luna Blue">Luna</button>
+      <button class="theme-quick-btn" data-set-theme="aero" title="Frutiger Aero Aqua Glass">Aero</button>
+      <button class="theme-quick-btn" data-set-theme="vista" title="Windows Vista Aero Dark">Vista</button>
+      <button class="theme-quick-btn" data-set-theme="royale" title="Royale Noir Silver">Royale</button>
+      <button class="theme-quick-btn" data-set-theme="matrix" title="Matrix Cyber Trap">Matrix</button>
     </div>
 
 
@@ -3259,13 +3259,13 @@
             <div class="sb-nav-right">
               
           <div class="sb-theme-select-wrap">
-            <span>🎨</span>
+            <span style="font-size:10px; font-weight:bold; color:#7dd3fc; letter-spacing:0.5px;">THEME:</span>
             <select id="sbThemeSelect" class="sb-theme-dropdown" title="Change Visual Theme">
-              <option value="luna">Theme: XP Luna</option>
-              <option value="aero">Theme: Frutiger Aero</option>
-              <option value="vista">Theme: Vista Dark (Smokey)</option>
-              <option value="royale">Theme: Royale Silver</option>
-              <option value="matrix">Theme: Cyber Matrix</option>
+              <option value="luna">XP Luna</option>
+              <option value="aero">Frutiger Aero</option>
+              <option value="vista">Vista Dark</option>
+              <option value="royale">Royale Silver</option>
+              <option value="matrix">Matrix Cyber</option>
             </select>
           </div>
 
@@ -4054,15 +4054,12 @@ Sound: Ethereal Ambient Trap, Cloud Rap, xaviersobased Type Beats
           <legend style="padding: 0 4px; font-weight: bold; color: #003e6b;">Wallpaper Gallery</legend>
           <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px;">
             <button class="wall-choice-btn active" id="btnWallDay" data-wall="assets/bliss.jpg">
-              <span>🌞</span>
               <span>Bliss Day</span>
             </button>
             <button class="wall-choice-btn" id="btnWallNight" data-wall="assets/night_bliss.jpg">
-              <span>🌌</span>
               <span>Night Aurora</span>
             </button>
             <button class="wall-choice-btn" id="btnWallAqua" data-wall="assets/aqua_paradise.jpg">
-              <span>🌊</span>
               <span>Aqua Marine</span>
             </button>
           </div>
@@ -4272,7 +4269,11 @@ Sound: Ethereal Ambient Trap, Cloud Rap, xaviersobased Type Beats
       </div>
       
       <div class="tray-icon" id="trayThemeBtn" title="Theme & Display Settings">
-        <span>🎨</span>
+        <svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.2">
+          <rect x="2" y="2" width="12" height="9" rx="1.5" fill="#38bdf8" stroke="#0284c7"/>
+          <line x1="8" y1="11" x2="8" y2="14" stroke="#e2e8f0"/>
+          <line x1="5" y1="14" x2="11" y2="14" stroke="#e2e8f0"/>
+        </svg>
       </div>
       <div class="tray-icon" id="traySound" title="Sound Volume">
         <span>🔊</span>
