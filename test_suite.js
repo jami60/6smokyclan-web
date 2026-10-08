@@ -194,8 +194,8 @@ async function run() {
     }
     console.log('[PASS] Luna respected user setting and kept bubbles OFF!');
 
-    // Switch across royale, vista, matrix
-    for (const t of ['royale', 'vista', 'matrix']) {
+    // Switch across bliss, vista, matrix
+    for (const t of ['bliss', 'vista', 'matrix']) {
       const res = await cdp.eval(`(() => {
         themeCtrl.applyTheme('${t}', null, false);
         return { theme: themeCtrl.currentTheme, bubbleEnabled: bubbles.enabled };
@@ -204,7 +204,24 @@ async function run() {
         throw new Error(`Theme ${t} enabled bubbles incorrectly!`);
       }
     }
-    console.log('[PASS] Bubbles stayed OFF across all 5 themes!');
+    console.log('[PASS] Bubbles stayed OFF across all themes!');
+
+    // Specifically test Bliss Live Video wallpaper playback
+    const blissVideoTest = await cdp.eval(`(() => {
+      themeCtrl.applyTheme('bliss', null, false);
+      const video = document.getElementById('desktopVideo');
+      return {
+        theme: themeCtrl.currentTheme,
+        videoVisible: video && video.style.display === 'block',
+        hasVideoSrc: video && video.src.includes('bliss_live.mp4'),
+        quickBtnActive: document.querySelector('.theme-quick-btn[data-set-theme="bliss"]')?.classList.contains('active')
+      };
+    })()`);
+    console.log('Bliss Live Video theme verification:', blissVideoTest);
+    if (!blissVideoTest.videoVisible || !blissVideoTest.hasVideoSrc || !blissVideoTest.quickBtnActive) {
+      throw new Error('Bliss Live Video wallpaper test failed: ' + JSON.stringify(blissVideoTest));
+    }
+    console.log('[PASS] Bliss Live Video theme correctly activates and displays looping background video!');
 
     // Re-enable bubbles
     const turnOnResult = await cdp.eval(`(() => {

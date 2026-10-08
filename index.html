@@ -2804,7 +2804,7 @@
       border: 1px solid rgba(56, 189, 248, 0.4);
     }
 
-    body[data-theme="royale"] {
+    body[data-theme="royale"], body[data-theme="bliss"] {
       --xp-blue-dark: #1e3a8a;
       --xp-blue-light: #60a5fa;
       --xp-taskbar-bg: linear-gradient(to bottom, #2563eb 0%, #1d4ed8 15%, #1e40af 85%, #172554 100%);
@@ -2814,11 +2814,11 @@
       --xp-titlebar: linear-gradient(to bottom, #3b82f6 0%, #2563eb 35%, #1d4ed8 85%, #1e3a8a 100%);
       --xp-titlebar-inactive: linear-gradient(to bottom, #94a3b8 0%, #64748b 40%, #475569 100%);
     }
-    body[data-theme="royale"] #taskbar {
+    body[data-theme="royale"] #taskbar, body[data-theme="bliss"] #taskbar {
       border-top: 2px solid #60a5fa;
       box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.45);
     }
-    body[data-theme="royale"] .xp-window {
+    body[data-theme="royale"] .xp-window, body[data-theme="bliss"] .xp-window {
       border-color: #1d4ed8;
       box-shadow: 0 10px 30px rgba(30, 58, 138, 0.35);
     }
@@ -3011,6 +3011,7 @@
 
   <!-- DESKTOP WORKSPACE -->
   <div id="desktop">
+    <video id="desktopVideo" autoplay loop muted playsinline style="display:none; position:absolute; inset:0; width:100%; height:100%; object-fit:cover; z-index:0; pointer-events:none;"></video>
     <div class="aero-atmosphere"></div>
     <canvas id="bubbleCanvas"></canvas>
     <div class="crt-overlay" id="crtOverlay"></div>
@@ -3025,7 +3026,7 @@
       <button class="theme-quick-btn active" data-set-theme="luna" title="Windows XP Luna Blue">Luna</button>
       <button class="theme-quick-btn" data-set-theme="aero" title="Frutiger Aero Aqua Glass">Aero</button>
       <button class="theme-quick-btn" data-set-theme="vista" title="Windows Vista Aero Dark">Vista</button>
-      <button class="theme-quick-btn" data-set-theme="royale" title="Windows XP Royale (Classic Bliss)">Royale</button>
+      <button class="theme-quick-btn" data-set-theme="bliss" title="Windows XP Bliss (Live Video)">Bliss</button>
       <button class="theme-quick-btn" data-set-theme="matrix" title="Matrix Cyber Trap">Matrix</button>
     </div>
 
@@ -3273,7 +3274,7 @@
               <option value="luna">XP Luna</option>
               <option value="aero">Frutiger Aero</option>
               <option value="vista">Vista Dark</option>
-              <option value="royale">Royale Silver</option>
+              <option value="bliss">Bliss Live</option>
               <option value="matrix">Matrix Cyber</option>
             </select>
           </div>
@@ -4080,11 +4081,12 @@ Sound: Ethereal Ambient Trap, Cloud Rap, xaviersobased Type Beats
         <div>
           <div class="xp-monitor-frame">
             <div class="xp-monitor-screen" id="monitorPreviewScreen" style="background-image:url('assets/bliss.jpg');">
-              <div class="xp-mini-window">
+              <video id="monitorPreviewVideo" autoplay loop muted playsinline style="display:none; position:absolute; inset:0; width:100%; height:100%; object-fit:cover; z-index:0; pointer-events:none;"></video>
+              <div class="xp-mini-window" style="z-index:2;">
                 <div class="xp-mini-titlebar">Active Window</div>
                 <div style="padding:2px; font-size:6px; color:#444;">6SC System</div>
               </div>
-              <div class="xp-mini-taskbar">
+              <div class="xp-mini-taskbar" style="z-index:2;">
                 <div class="xp-mini-start"></div>
               </div>
             </div>
@@ -4101,7 +4103,7 @@ Sound: Ethereal Ambient Trap, Cloud Rap, xaviersobased Type Beats
               <option value="luna">Windows XP (Luna Blue Classic)</option>
               <option value="aero">Frutiger Aero (Aqua Glass Edition)</option>
               <option value="vista">Windows Vista Aero (Dark Smokey Noir)</option>
-              <option value="royale">Windows XP Royale (Silver Edition)</option>
+              <option value="bliss">Windows XP Bliss (Live Video Edition)</option>
               <option value="matrix">Matrix Cyber Trap (Hacker Edition)</option>
             </select>
           </div>
@@ -4113,8 +4115,8 @@ Sound: Ethereal Ambient Trap, Cloud Rap, xaviersobased Type Beats
             <button class="wall-choice-btn active" id="btnWallDay" data-wall="assets/bliss.jpg">
               <span>Aero Bliss</span>
             </button>
-            <button class="wall-choice-btn" id="btnWallRoyale" data-wall="assets/royale_bliss.jpg">
-              <span>Classic Bliss</span>
+            <button class="wall-choice-btn" id="btnWallBliss" data-wall="assets/royale_bliss.jpg" data-video="assets/bliss_live.mp4">
+              <span>Live Bliss Video</span>
             </button>
             <button class="wall-choice-btn" id="btnWallNight" data-wall="assets/night_bliss.jpg">
               <span>Night Aurora</span>
@@ -4565,7 +4567,7 @@ Sound: Ethereal Ambient Trap, Cloud Rap, xaviersobased Type Beats
     <div class="context-item" id="ctxThemeAero">Theme: Frutiger Aero (Aqua)</div>
     <div class="context-item" id="ctxThemeLuna">Theme: Windows XP (Luna)</div>
     <div class="context-item" id="ctxThemeVista">Theme: Vista Dark (Smokey)</div>
-    <div class="context-item" id="ctxThemeRoyale">Theme: Royale Silver</div>
+    <div class="context-item" id="ctxThemeBliss">Theme: Windows XP Bliss (Live)</div>
     <div class="context-item" id="ctxProps">Properties</div>
   </div>
 
@@ -7216,16 +7218,19 @@ Digitally Verified & Signed:
           luna: { name: 'Windows XP Luna Blue', wall: 'assets/bliss.jpg', bubbles: true },
           aero: { name: 'Frutiger Aero Aqua Glass', wall: 'assets/aqua_paradise.jpg', bubbles: true },
           vista: { name: 'Windows Vista Aero Dark', wall: 'assets/night_bliss.jpg', bubbles: false },
-          royale: { name: 'Windows XP Royale', wall: 'assets/royale_bliss.jpg', bubbles: false },
+          bliss: { name: 'Windows XP Bliss (Live Video)', wall: 'assets/royale_bliss.jpg', video: 'assets/bliss_live.mp4', bubbles: false },
+          royale: { name: 'Windows XP Bliss (Live Video)', wall: 'assets/royale_bliss.jpg', video: 'assets/bliss_live.mp4', bubbles: false },
           matrix: { name: 'Cyber Matrix Trap', wall: 'assets/night_bliss.jpg', bubbles: false }
         };
 
-        this.currentTheme = localStorage.getItem('6sc_theme') || 'luna';
+        let savedTheme = localStorage.getItem('6sc_theme') || 'luna';
+        if (savedTheme === 'royale') savedTheme = 'bliss';
+        this.currentTheme = savedTheme;
         let savedWall = localStorage.getItem('6sc_wallpaper');
-        if (this.currentTheme === 'royale' && (!savedWall || savedWall === 'assets/bliss.jpg')) {
+        if (this.currentTheme === 'bliss' && (!savedWall || savedWall === 'assets/bliss.jpg')) {
           savedWall = 'assets/royale_bliss.jpg';
         }
-        this.currentWall = savedWall || this.themes[this.currentTheme].wall;
+        this.currentWall = savedWall || (this.themes[this.currentTheme] ? this.themes[this.currentTheme].wall : 'assets/bliss.jpg');
         this.sparklesEnabled = true;
 
         this.init();
@@ -7237,6 +7242,7 @@ Digitally Verified & Signed:
       }
 
       applyTheme(themeId, wallUrl = null, playSound = true) {
+        if (themeId === 'royale') themeId = 'bliss';
         if (!this.themes[themeId]) themeId = 'luna';
         this.currentTheme = themeId;
 
@@ -7247,33 +7253,65 @@ Digitally Verified & Signed:
         // 1. Set body attribute for CSS variables & styling
         document.body.setAttribute('data-theme', themeId);
 
-        // 2. Set desktop background image
+        // 2. Set desktop background image & live video
         const desktopEl = document.getElementById('desktop');
+        const deskVideo = document.getElementById('desktopVideo');
+        if (themeData.video) {
+          if (deskVideo) {
+            if (!deskVideo.src || !deskVideo.src.includes(themeData.video)) {
+              deskVideo.src = themeData.video;
+            }
+            deskVideo.style.display = 'block';
+            deskVideo.play().catch(() => {});
+          }
+        } else {
+          if (deskVideo) {
+            deskVideo.style.display = 'none';
+            deskVideo.pause();
+          }
+        }
         if (desktopEl) {
           desktopEl.style.backgroundImage = `url('${wallpaper}')`;
         }
 
         // 3. Update monitor preview screen in Display Properties
         const monScreen = document.getElementById('monitorPreviewScreen');
+        const monVideo = document.getElementById('monitorPreviewVideo');
         if (monScreen) {
           monScreen.style.backgroundImage = `url('${wallpaper}')`;
+        }
+        if (themeData.video) {
+          if (monVideo) {
+            if (!monVideo.src || !monVideo.src.includes(themeData.video)) {
+              monVideo.src = themeData.video;
+            }
+            monVideo.style.display = 'block';
+            monVideo.play().catch(() => {});
+          }
+        } else {
+          if (monVideo) {
+            monVideo.style.display = 'none';
+            monVideo.pause();
+          }
         }
 
         // 4. Update Quick Theme Bar buttons
         document.querySelectorAll('.theme-quick-btn').forEach(btn => {
-          btn.classList.toggle('active', btn.getAttribute('data-set-theme') === themeId);
+          const t = btn.getAttribute('data-set-theme');
+          btn.classList.toggle('active', t === themeId || (themeId === 'bliss' && t === 'royale'));
         });
 
         // 5. Update Dropdowns
         const sbSel = document.getElementById('sbThemeSelect');
-        if (sbSel) sbSel.value = themeId;
+        if (sbSel) sbSel.value = (themeId === 'royale' ? 'bliss' : themeId);
         const propsSel = document.getElementById('propsThemeSelect');
-        if (propsSel) propsSel.value = themeId;
+        if (propsSel) propsSel.value = (themeId === 'royale' ? 'bliss' : themeId);
 
         // 6. Update Wallpaper Gallery buttons
         document.querySelectorAll('.wall-choice-btn').forEach(btn => {
           const w = btn.getAttribute('data-wall');
-          btn.classList.toggle('active', !!(w && wallpaper && (wallpaper.includes(w) || w.includes(wallpaper))));
+          const v = btn.getAttribute('data-video');
+          btn.classList.toggle('active', !!(themeData.video && v) || (!themeData.video && w && wallpaper && (wallpaper.includes(w) || w.includes(wallpaper))));
         });
 
         // 7. Toggle bubbles: respect explicit user preference if saved, otherwise use theme preset
@@ -7297,21 +7335,53 @@ Digitally Verified & Signed:
         }
       }
 
-      setWallpaper(wallUrl) {
+      setWallpaper(wallUrl, videoUrl = null) {
         this.currentWall = wallUrl;
         const desktopEl = document.getElementById('desktop');
+        const deskVideo = document.getElementById('desktopVideo');
+        if (videoUrl) {
+          if (deskVideo) {
+            if (!deskVideo.src || !deskVideo.src.includes(videoUrl)) deskVideo.src = videoUrl;
+            deskVideo.style.display = 'block';
+            deskVideo.play().catch(() => {});
+          }
+        } else {
+          if (deskVideo) {
+            deskVideo.style.display = 'none';
+            deskVideo.pause();
+          }
+        }
         if (desktopEl) desktopEl.style.backgroundImage = `url('${wallUrl}')`;
 
         const monScreen = document.getElementById('monitorPreviewScreen');
+        const monVideo = document.getElementById('monitorPreviewVideo');
+        if (videoUrl) {
+          if (monVideo) {
+            if (!monVideo.src || !monVideo.src.includes(videoUrl)) monVideo.src = videoUrl;
+            monVideo.style.display = 'block';
+            monVideo.play().catch(() => {});
+          }
+        } else {
+          if (monVideo) {
+            monVideo.style.display = 'none';
+            monVideo.pause();
+          }
+        }
         if (monScreen) monScreen.style.backgroundImage = `url('${wallUrl}')`;
 
         document.querySelectorAll('.wall-choice-btn').forEach(btn => {
-          const w = btn.getAttribute('data-wall'); btn.classList.toggle('active', !!(w && wallUrl && (wallUrl.includes(w) || w.includes(wallUrl))));
+          const w = btn.getAttribute('data-wall');
+          const v = btn.getAttribute('data-video');
+          if (videoUrl) {
+            btn.classList.toggle('active', !!(v && v === videoUrl));
+          } else {
+            btn.classList.toggle('active', !!(!v && w && wallUrl && (wallUrl.includes(w) || w.includes(wallUrl))));
+          }
         });
 
         localStorage.setItem('6sc_wallpaper', wallUrl);
         if (sound) sound.playClick();
-        showBalloon('Wallpaper Changed', 'Desktop wallpaper updated.');
+        showBalloon('Wallpaper Changed', videoUrl ? 'Live video wallpaper applied.' : 'Desktop wallpaper updated.');
       }
 
       setupListeners() {
@@ -7345,7 +7415,8 @@ Digitally Verified & Signed:
           btn.addEventListener('click', (e) => {
             e.preventDefault();
             const w = btn.getAttribute('data-wall');
-            this.setWallpaper(w);
+            const v = btn.getAttribute('data-video');
+            this.setWallpaper(w, v);
           });
         });
 
@@ -7398,7 +7469,8 @@ Digitally Verified & Signed:
         wireCtx('ctxThemeAero', 'aero');
         wireCtx('ctxThemeLuna', 'luna');
         wireCtx('ctxThemeVista', 'vista');
-        wireCtx('ctxThemeRoyale', 'royale');
+        wireCtx('ctxThemeBliss', 'bliss');
+        wireCtx('ctxThemeRoyale', 'bliss');
       }
     }
 
